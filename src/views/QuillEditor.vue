@@ -1,4 +1,5 @@
 <script setup lang='ts'>
+// import Quill from '../../../quill/packages/quill/src/quill.ts'
 import Quill from 'quill'
 import { type QuillOptions } from 'quill'
 import 'quill/dist/quill.core.css'
@@ -6,25 +7,10 @@ import 'quill/dist/quill.snow.css'
 import 'quill/dist/quill.bubble.css'
 import { onMounted } from 'vue';
 import { editorOptions } from '@/utils/editorConfig'
-// const toolbarOptions = [
-//   ['bold', 'italic', 'underline', 'strike'],        // 切换按钮
-//   ['blockquote', 'code-block'],
-
-//   [{ 'header': 1 }, { 'header': 2 }],               // 用户自定义按钮值
-//   [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-//   [{ 'script': 'sub' }, { 'script': 'super' }],      // 上标/下标
-//   [{ 'indent': '-1' }, { 'indent': '+1' }],          // 减少缩进/缩进
-//   [{ 'direction': 'rtl' }],                         // 文本下划线
-
-//   [{ 'size': ['small', false, 'large', 'huge'] }],  // 用户自定义下拉
-//   [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-
-//   [{ 'color': [] }, { 'background': [] }],          // 主题默认下拉，使用主题提供的值
-//   [{ 'font': [] }],
-//   [{ 'align': [] }],
-
-//   ['clean']                                         // 清除格式
-// ];
+// import Video from '@/utils/formats/Video'
+// Quill.register('blots/video', Video)
+import Uploader from '@/utils/modules/Uploader'
+Quill.register('modules/uploader', Uploader)
 onMounted(() => {
   const editor = new Quill('#editor', editorOptions as QuillOptions);
   window.editor = editor
@@ -33,7 +19,7 @@ onMounted(() => {
 
 <template>
   <div class="box">
-    <div id="main">
+    <div class="editor-box">
       <div id="editor"></div>
     </div>
   </div>
@@ -41,15 +27,20 @@ onMounted(() => {
 
 <style lang='scss' scoped>
 .box {
-  width: 1000px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.main {
-  width: 1000px;
-  height: 800px;
-}
+.editor-box {}
 
 #editor {
   height: 600px;
+  font-size: 18px;
+}
+</style>
+<style>
+.ql-video {
+  display: none;
 }
 </style>
