@@ -3,6 +3,7 @@ import type Quill from 'quill'
 import Emitter from 'quill/core/emitter'
 import Module from 'quill/core/module'
 import type { Range } from 'quill/core/selection'
+import { ElLoading } from 'element-plus'
 
 interface UploaderOptions {
   mimetypes: {
@@ -15,6 +16,7 @@ interface UploaderOptions {
     files: { file: File; type: 'image' | 'video' }[]
   ) => void
 }
+let loadingInstance: any
 const defaultWidth = 300
 const defaultHeight = 300
 const uploadFile: (fileObj: { file: File; type: 'image' | 'video' }) => Promise<string> = (
@@ -139,6 +141,11 @@ Uploader.DEFAULTS = {
       return
     }
     // TODO: 需要一个loading效果
+    loadingInstance = ElLoading.service({
+      lock: true,
+      text: 'Loading',
+      background: 'rgba(255, 255, 255, 0.7)'
+    })
     const promises = fileObjs.map<
       Promise<{ url: string; type: 'image' | 'video'; width: number; height: number }>
     >((fileObj) => {
@@ -152,25 +159,30 @@ Uploader.DEFAULTS = {
         reader.readAsDataURL(fileObj.file)
       })
     })
-    Promise.all(promises).then((uploadFiles) => {
-      const update = uploadFiles.reduce((delta: Delta, uploadFile) => {
-        if (uploadFile.type === 'image') {
-          return delta.insert(
-            { image: uploadFile.url },
-            { width: uploadFile.width, height: uploadFile.height }
-          )
-        } else if (uploadFile.type === 'video') {
-          return delta.insert(
-            { video: uploadFile.url },
-            { width: uploadFile.width, height: uploadFile.height }
-          )
-        } else {
-          return delta
-        }
-      }, new Delta().retain(range.index).delete(range.length)) as Delta
-      this.quill.updateContents(update, Emitter.sources.USER)
-      this.quill.setSelection(range.index + uploadFiles.length, Emitter.sources.SILENT)
-    })
+    Promise.all(promises)
+      .then((uploadFiles) => {
+        const update = uploadFiles.reduce((delta: Delta, uploadFile) => {
+          if (uploadFile.type === 'image') {
+            return delta.insert(
+              { image: uploadFile.url },
+              { width: uploadFile.width, height: uploadFile.height }
+            )
+          } else if (uploadFile.type === 'video') {
+            return delta.insert(
+              { video: uploadFile.url },
+              { width: uploadFile.width, height: uploadFile.height }
+            )
+          } else {
+            return delta
+          }
+        }, new Delta().retain(range.index).delete(range.length)) as Delta
+        loadingInstance && loadingInstance.close()
+        this.quill.updateContents(update, Emitter.sources.USER)
+        this.quill.setSelection(range.index + uploadFiles.length, Emitter.sources.SILENT)
+      })
+      .catch(() => {
+        loadingInstance && loadingInstance.close()
+      })
   }
 }
 
