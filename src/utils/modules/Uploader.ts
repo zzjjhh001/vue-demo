@@ -15,6 +15,69 @@ interface UploaderOptions {
     files: { file: File; type: 'image' | 'video' }[]
   ) => void
 }
+const defaultWidth = 300
+const defaultHeight = 300
+const uploadFile: (fileObj: { file: File; type: 'image' | 'video' }) => Promise<string> = (
+  fileObj
+) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (fileObj.type === 'image') {
+        resolve(
+          'https://ua-cdn.learnings.ai/imageView/200/200/asset/prod/video_cover/d00c4aa0a2a2b22f4d04209286e856e9.jpeg'
+        )
+      } else if (fileObj.type === 'video') {
+        resolve('https://ua-cdn.learnings.ai/asset/prod/video/2e193c353134ad593466e874597f2671.mp4')
+      }
+    }, 1000)
+  })
+}
+
+const getSize: (
+  fileObj: { file: File; type: 'image' | 'video' },
+  result: string
+) => Promise<{ width: number; height: number }> = (fileObj, result) => {
+  return new Promise((resolve, reject) => {
+    if (fileObj.type === 'image') {
+      const img = new Image()
+      let imgWidth = defaultHeight
+      let imgHeight = defaultWidth
+      img.onload = function () {
+        const width = img.width
+        const height = img.height
+        // 使用获取到的宽高进行操作
+        if (width && height) {
+          if (width / height > defaultWidth / defaultHeight) {
+            imgHeight = (height * defaultWidth) / width
+          } else {
+            imgWidth = (width * defaultHeight) / height
+          }
+        }
+        resolve({ width: imgWidth, height: imgHeight })
+      }
+      img.src = result
+    } else if (fileObj.type === 'video') {
+      let imgWidth = defaultHeight
+      let imgHeight = defaultWidth
+      const video = document.createElement('video')
+      video.preload = 'metadata'
+      video.onloadedmetadata = function () {
+        const width = video.videoWidth
+        const height = video.videoHeight
+        // 使用获取到的宽高进行操作
+        if (width && height) {
+          if (width / height > defaultWidth / defaultHeight) {
+            imgHeight = (height * defaultWidth) / width
+          } else {
+            imgWidth = (width * defaultHeight) / height
+          }
+        }
+        resolve({ width: imgWidth, height: imgHeight })
+      }
+      video.src = URL.createObjectURL(fileObj.file)
+    }
+  })
+}
 
 class Uploader extends Module<UploaderOptions> {
   static DEFAULTS: UploaderOptions
@@ -71,40 +134,36 @@ Uploader.DEFAULTS = {
     image: ['image/png', 'image/jpeg'],
     video: ['video/mp4']
   },
-  handler(range: Range, files: { file: File; type: 'image' | 'video' }[]) {
-    // TODO: 加上video
-    if (!this.quill.scroll.query('image')) {
+  handler(range: Range, fileObjs: { file: File; type: 'image' | 'video' }[]) {
+    if (!this.quill.scroll.query('image') || !this.quill.scroll.query('video')) {
       return
     }
-    const promises = files.map<Promise<{ url: string; type: 'image' | 'video' }>>((file) => {
+    // TODO: 需要一个loading效果
+    const promises = fileObjs.map<
+      Promise<{ url: string; type: 'image' | 'video'; width: number; height: number }>
+    >((fileObj) => {
       return new Promise((resolve) => {
         const reader = new FileReader()
-        reader.onload = () => {
-          // resolve(reader.result as string);
-          // Mock 上传图片
-          setTimeout(() => {
-            if (file.type === 'image') {
-              resolve({
-                url: 'https://ua-cdn.learnings.ai/imageView/200/200/asset/prod/video_cover/d00c4aa0a2a2b22f4d04209286e856e9.jpeg',
-                type: file.type
-              })
-            } else if (file.type === 'video') {
-              resolve({
-                url: 'https://ua-cdn.learnings.ai/asset/prod/video/2e193c353134ad593466e874597f2671.mp4',
-                type: file.type
-              })
-            }
-          }, 100)
+        reader.onload = async () => {
+          const { width, height } = await getSize(fileObj, reader.result as string)
+          const data = await uploadFile(fileObj)
+          resolve({ url: data, type: fileObj.type, width, height })
         }
-        reader.readAsDataURL(file.file)
+        reader.readAsDataURL(fileObj.file)
       })
     })
     Promise.all(promises).then((uploadFiles) => {
       const update = uploadFiles.reduce((delta: Delta, uploadFile) => {
         if (uploadFile.type === 'image') {
-          return delta.insert({ image: uploadFile.url }, { width: '120px', height: '200px' })
+          return delta.insert(
+            { image: uploadFile.url },
+            { width: uploadFile.width, height: uploadFile.height }
+          )
         } else if (uploadFile.type === 'video') {
-          return delta.insert({ video: uploadFile.url }, { width: '120px', height: '200px' })
+          return delta.insert(
+            { video: uploadFile.url },
+            { width: uploadFile.width, height: uploadFile.height }
+          )
         } else {
           return delta
         }
