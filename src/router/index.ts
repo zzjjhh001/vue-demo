@@ -30,6 +30,11 @@ const router = createRouter({
       path: '/editor',
       name: 'editor',
       component: () => import('../views/QuillEditor.vue')
+    },
+    {
+      path: '/detail',
+      name: 'detail',
+      component: () => import('../views/QuillDetail.vue')
     }
   ]
 })
