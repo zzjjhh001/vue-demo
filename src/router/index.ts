@@ -35,6 +35,11 @@ const router = createRouter({
       path: '/detail',
       name: 'detail',
       component: () => import('../views/QuillDetail.vue')
+    },
+    {
+      path: '/feishuDoc',
+      name: 'feishuDoc',
+      component: () => import('../views/FeishuDoc.vue')
     }
   ]
 })

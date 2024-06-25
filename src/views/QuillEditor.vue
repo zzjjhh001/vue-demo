@@ -8,9 +8,10 @@ import 'quill/dist/quill.bubble.css'
 import { onMounted } from 'vue';
 import { editorOptions } from '@/utils/editorConfig'
 // import Video from '@/utils/formats/Video'
-// Quill.register('blots/video', Video)
+// Quill.register('formats/video', Video)
 import Uploader from '@/utils/modules/Uploader'
 Quill.register('modules/uploader', Uploader)
+const text = '{"insert":"\\n视频如下\\n"},{"attributes":{"height":"300","width":"168.75"},"insert":{"video":"https://ua-cdn.learnings.ai/asset/prod/video/2e193c353134ad593466e874597f2671.mp4"}}'
 onMounted(() => {
   const editor = new Quill('#editor', editorOptions as QuillOptions);
   window.editor = editor
@@ -32,7 +33,9 @@ onMounted(() => {
   justify-content: center;
 }
 
-.editor-box {}
+.editor-box {
+  width: 700px;
+}
 
 #editor {
   height: 600px;

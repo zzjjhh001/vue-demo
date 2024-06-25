@@ -48,10 +48,12 @@ class Video extends BlockEmbed {
     }
   }
 
-  // html() {
-  //   const { video } = this.value()
-  //   return `<a href="${video}">${video}</a>`
-  // }
+  html() {
+    const { video } = this.value()
+    const { width, height } = this.formats()
+    console.log(111, this.formats(), this.attributes.values())
+    return `<video src="${video}" width="${width}px" height="${height}px"></video>`
+  }
 }
 
 export default Video
